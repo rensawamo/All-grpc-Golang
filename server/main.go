@@ -17,10 +17,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+// pbのサーバをポインタに持つ サーバでの関数群を定義
 type server struct {
 	pb.UnimplementedFileServiceServer
 }
 
+// １つのリクエストに対して 1つのレスポンスを返す関数を定義
 func (*server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (*pb.ListFilesResponse, error) {
 	fmt.Println("ListFiles was invoked")
 
@@ -43,6 +45,7 @@ func (*server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (*pb.Lis
 
 }
 
+// １つのリクエストに対して 複数の レスポンスをおくる関数の定義
 func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadServer) error {
 	fmt.Println("Download was invoked")
 
@@ -57,8 +60,8 @@ func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadS
 
 	buf := make([]byte, 5)
 	for {
-		n, err := file.Read(buf) // n は読み込んだバイト数が返される
-		if n == 0 || err == io.EOF { // なにも読み込まれなかった or ファイルの最後まで到達した 
+		n, err := file.Read(buf)     // n は読み込んだバイト数が返される
+		if n == 0 || err == io.EOF { // なにも読み込まれなかった or ファイルの最後まで到達した
 			break
 		}
 		if err != nil {
@@ -73,26 +76,22 @@ func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadS
 
 		time.Sleep(1 * time.Second)
 	}
-	return nil  // resoposeが終了する
+	return nil // resoposeが終了する
 }
 
-// streamは データの流れで
-// 複数のリクエストがながれてきてstreamで処理していく
-
+// 複数のリクエストをさばいて １つのレスポンスを送信する
 func (*server) Upload(stream pb.FileService_UploadServer) error {
 	fmt.Println("Upload was invoked")
-
 	var buf bytes.Buffer
 	for {
-		req, err := stream.Recv()  //クライアントから 複数のレスポンスを取得することが可能
-		if err == io.EOF { // eofの処理は ioに任せる
+		req, err := stream.Recv() //クライアントから 複数のレスポンスを取得することが可能
+		if err == io.EOF {        // eofの処理は ioに任せる
 			res := &pb.UploadResponse{Size: int32(buf.Len())}
 			return stream.SendAndClose(res)
 		}
 		if err != nil {
 			return err
 		}
-
 		data := req.GetData()
 		log.Printf("received data(bytes): %v", data)
 		log.Printf("received data(string): %v", string(data))
@@ -100,11 +99,10 @@ func (*server) Upload(stream pb.FileService_UploadServer) error {
 	}
 }
 
+// 複数対複数
 func (*server) UploadAndNotifyProgress(stream pb.FileService_UploadAndNotifyProgressServer) error {
 	fmt.Println("UploadAndNotifyProgress was invoked")
-
 	size := 0
-
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {

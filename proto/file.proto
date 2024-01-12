@@ -32,6 +32,11 @@ message UploadAndNotifyProgressResponse {
   string msg = 1;
 };
 
+
+// gRPCの通信方式をきめている
+// ここが コンパイルされて interfaceの関数が決定される 
+// 通信方式
+// streamは  複数のreq(res) のストリーミングを意味する
 service FileService {
   rpc ListFiles (ListFilesRequest) returns (ListFilesResponse);
   rpc Download (DownloadRequest) returns (stream DownloadResponse); // サーバーストリーミング

@@ -27,6 +27,7 @@ func main() {
 	// CallUploadAndNotifyProgress(client)
 }
 
+// 1 リクエスト 1 レスポンスの gRPCの通信の方式
 func callListFiles(client pb.FileServiceClient) {
 	res, err := client.ListFiles(context.Background(), &pb.ListFilesRequest{})
 	if err != nil {
@@ -36,10 +37,10 @@ func callListFiles(client pb.FileServiceClient) {
 }
 
 
-
+// １リクエスト 複数のレスポンス方式
 func callDownload(client pb.FileServiceClient) {
 	req := &pb.DownloadRequest{Filename: "name.txt"}
-	stream, err := client.Download(context.Background(), req)  // インターフェイスで stremgが実装されている
+	stream, err := client.Download(context.Background(), req)  // インターフェイスで stream が実装されている
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -56,6 +57,7 @@ func callDownload(client pb.FileServiceClient) {
 	}
 }
 
+// 複数の リクエスト と１レスポンス方式
 func CallUpload(client pb.FileServiceClient) {
 	filename := "sports.txt"
 	path := "/home/rensawamo/desktop/grpc-searver/storage" + filename
@@ -97,6 +99,7 @@ func CallUpload(client pb.FileServiceClient) {
 	log.Printf("received data size: %v", res.GetSize())
 }
 
+//
 func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 	filename := "sports.txt"
 	path := "/home/rensawamo/desktop/grpc-searver/storage/" + filename
