@@ -1,4 +1,4 @@
-package main
+package main  //client も同じく  main パッケージ
 
 import (
 	"context"
@@ -13,17 +13,18 @@ import (
 )
 
 func main() {
+
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
 	defer conn.Close()
 
-	client := pb.NewFileServiceClient(conn)
+	client := pb.NewFileServiceClient(conn) // ファイルサービスクライアントの取得
 	// callListFiles(client)
-	// callDownload(client)
+	callDownload(client)
 	// CallUpload(client)
-	CallUploadAndNotifyProgress(client)
+	// CallUploadAndNotifyProgress(client)
 }
 
 func callListFiles(client pb.FileServiceClient) {
@@ -31,17 +32,17 @@ func callListFiles(client pb.FileServiceClient) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	fmt.Println(res.GetFilenames())
 }
 
+
+
 func callDownload(client pb.FileServiceClient) {
 	req := &pb.DownloadRequest{Filename: "name.txt"}
-	stream, err := client.Download(context.Background(), req)
+	stream, err := client.Download(context.Background(), req)  // インターフェイスで stremgが実装されている
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	for {
 		res, err := stream.Recv()
 		if err == io.EOF {
@@ -50,7 +51,6 @@ func callDownload(client pb.FileServiceClient) {
 		if err != nil {
 			log.Fatalln(err)
 		}
-
 		log.Printf("Response from Download(bytes): %v", res.GetData())
 		log.Printf("Response from Download(string): %v", string(res.GetData()))
 	}
@@ -58,7 +58,7 @@ func callDownload(client pb.FileServiceClient) {
 
 func CallUpload(client pb.FileServiceClient) {
 	filename := "sports.txt"
-	path := "ご自身のパスを入力してください/storage/" + filename
+	path := "/home/rensawamo/desktop/grpc-searver/storage" + filename
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -99,7 +99,7 @@ func CallUpload(client pb.FileServiceClient) {
 
 func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 	filename := "sports.txt"
-	path := "ご自身のパスを入力してください/storage/storage/" + filename
+	path := "/home/rensawamo/desktop/grpc-searver/storage/" + filename
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -137,7 +137,6 @@ func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 			log.Fatalln(err)
 		}
 	}()
-
 	// response
 	ch := make(chan struct{})
 	go func() {

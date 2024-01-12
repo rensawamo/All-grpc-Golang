@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package file;
+package file; 
 
-option go_package = "./pb";
+option go_package = "./pb";  
 
 message ListFilesRequest {};
 message ListFilesResponse {
@@ -34,7 +34,7 @@ message UploadAndNotifyProgressResponse {
 
 service FileService {
   rpc ListFiles (ListFilesRequest) returns (ListFilesResponse);
-  rpc Download (DownloadRequest) returns (stream DownloadResponse);
-  rpc Upload (stream UploadRequest) returns (UploadResponse);
+  rpc Download (DownloadRequest) returns (stream DownloadResponse); // サーバーストリーミング
+  rpc Upload (stream UploadRequest) returns (UploadResponse);  //クライアントストリーミング
   rpc UploadAndNotifyProgress (stream UploadAndNotifyProgressRequest) returns (stream UploadAndNotifyProgressResponse);
 }

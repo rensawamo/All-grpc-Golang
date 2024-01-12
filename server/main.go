@@ -1,5 +1,7 @@
 package main
 
+//  RPC サーバの実装
+
 import (
 	"bytes"
 	"context"
@@ -22,20 +24,18 @@ type server struct {
 func (*server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (*pb.ListFilesResponse, error) {
 	fmt.Println("ListFiles was invoked")
 
-	dir := "/ご自身のパスを入力してください/storage"
+	dir := "/home/rensawamo/desktop/grpc-searver/storage"
 
 	paths, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-
 	var filenames []string
 	for _, path := range paths {
 		if !path.IsDir() {
 			filenames = append(filenames, path.Name())
 		}
 	}
-
 	res := &pb.ListFilesResponse{
 		Filenames: filenames,
 	}
@@ -47,7 +47,7 @@ func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadS
 	fmt.Println("Download was invoked")
 
 	filename := req.GetFilename()
-	path := "/ご自身のパスを入力してください/storage/" + filename
+	path := "/home/rensawamo/desktop/grpc-searver/storage/" + filename
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -57,14 +57,14 @@ func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadS
 
 	buf := make([]byte, 5)
 	for {
-		n, err := file.Read(buf)
-		if n == 0 || err == io.EOF {
+		n, err := file.Read(buf) // n は読み込んだバイト数が返される
+		if n == 0 || err == io.EOF { // なにも読み込まれなかった or ファイルの最後まで到達した 
 			break
 		}
 		if err != nil {
 			return err
 		}
-
+		// 読み込んだ内容を レスポンスに詰める
 		res := &pb.DownloadResponse{Data: buf[:n]}
 		sendErr := stream.Send(res)
 		if sendErr != nil {
@@ -73,17 +73,19 @@ func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadS
 
 		time.Sleep(1 * time.Second)
 	}
-
-	return nil
+	return nil  // resoposeが終了する
 }
+
+// streamは データの流れで
+// 複数のリクエストがながれてきてstreamで処理していく
 
 func (*server) Upload(stream pb.FileService_UploadServer) error {
 	fmt.Println("Upload was invoked")
 
 	var buf bytes.Buffer
 	for {
-		req, err := stream.Recv()
-		if err == io.EOF {
+		req, err := stream.Recv()  //クライアントから 複数のレスポンスを取得することが可能
+		if err == io.EOF { // eofの処理は ioに任せる
 			res := &pb.UploadResponse{Size: int32(buf.Len())}
 			return stream.SendAndClose(res)
 		}
@@ -126,7 +128,6 @@ func (*server) UploadAndNotifyProgress(stream pb.FileService_UploadAndNotifyProg
 	}
 }
 
-
 func main() {
 	lis, err := net.Listen("tcp", "localhost:50051")
 	if err != nil {
@@ -134,7 +135,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterFileServiceServer(s, &server{})
+	pb.RegisterFileServiceServer(s, &server{}) // grpc サーバにファイルを登録する
 
 	fmt.Println("server is running")
 	if err := s.Serve(lis); err != nil {
