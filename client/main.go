@@ -119,6 +119,7 @@ func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 
 	// 双方向ストリーミングでは、並行でリクエストとレスポンスをうけとっていく
 	// go ルーチンを使用
+	// req res req res の流れ そこから chのclopseで 終了を保証
 
 	// request
 	buf := make([]byte, 5)
