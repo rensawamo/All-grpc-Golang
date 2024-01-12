@@ -23,10 +23,10 @@ func main() {
 	defer conn.Close()
 
 	client := pb.NewFileServiceClient(conn) // ファイルサービスクライアントの取得
-	// callListFiles(client)
+	callListFiles(client)
 	// callDownload(client)
 	// CallUpload(client)
-	CallUploadAndNotifyProgress(client)
+	// CallUploadAndNotifyProgress(client)
 }
 
 // 1 リクエスト 1 レスポンスの gRPCの通信の方式

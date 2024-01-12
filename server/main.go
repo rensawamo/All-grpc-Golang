@@ -126,14 +126,29 @@ func (*server) UploadAndNotifyProgress(stream pb.FileService_UploadAndNotifyProg
 	}
 }
 
+// サーバ側のインターセプタを実装
+func logging() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+		log.Printf("request data: %+v", req)
+		resp, err = handler(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("response data: %+v", resp)
+
+		return resp, nil
+	}
+}
+
 func main() {
 	lis, err := net.Listen("tcp", "localhost:50051")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
-	pb.RegisterFileServiceServer(s, &server{}) // grpc サーバにファイルを登録する
+	// s := grpc.NewServer()
+	s := grpc.NewServer(grpc.UnaryInterceptor(logging()))  // 今回は Unaryのログを挟んでみた
+	pb.RegisterFileServiceServer(s, &server{}) // grpc サーバにファイル を登録する
 
 	fmt.Println("server is running")
 	if err := s.Serve(lis); err != nil {
