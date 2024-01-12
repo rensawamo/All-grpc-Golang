@@ -12,6 +12,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+// クライアントでは、 pbによって定義された 通信方式のインターフェイスの関数が実装される
+
 func main() {
 
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
@@ -22,9 +24,9 @@ func main() {
 
 	client := pb.NewFileServiceClient(conn) // ファイルサービスクライアントの取得
 	// callListFiles(client)
-	callDownload(client)
+	// callDownload(client)
 	// CallUpload(client)
-	// CallUploadAndNotifyProgress(client)
+	CallUploadAndNotifyProgress(client)
 }
 
 // 1 リクエスト 1 レスポンスの gRPCの通信の方式
@@ -99,7 +101,7 @@ func CallUpload(client pb.FileServiceClient) {
 	log.Printf("received data size: %v", res.GetSize())
 }
 
-//
+// 双方向ストリーミングのリクエスト処理
 func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 	filename := "sports.txt"
 	path := "/home/rensawamo/desktop/grpc-searver/storage/" + filename
@@ -110,10 +112,13 @@ func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 	}
 	defer file.Close()
 
-	stream, err := client.UploadAndNotifyProgress(context.Background())
+	stream, err := client.UploadAndNotifyProgress(context.Background()) // streamの取得
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	// 双方向ストリーミングでは、並行でリクエストとレスポンスをうけとっていく
+	// go ルーチンを使用
 
 	// request
 	buf := make([]byte, 5)
@@ -135,7 +140,7 @@ func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 			time.Sleep(1 * time.Second)
 		}
 
-		err := stream.CloseSend()
+		err := stream.CloseSend() 
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -145,7 +150,7 @@ func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 	go func() {
 		for {
 			res, err := stream.Recv()
-			if err == io.EOF {
+			if err == io.EOF { // requestの stream.CloseSend()の実行により通知を受け取る
 				break
 			}
 			if err != nil {
@@ -156,6 +161,7 @@ func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 		}
 		close(ch)
 	}()
-	<-ch
+
+	<-ch //ここまで到達すると  close(ch) に到達するので go ルーチンで処理がまわっている間まで の双方向ストリーム保障される
 
 }
